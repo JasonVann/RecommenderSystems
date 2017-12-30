@@ -73,7 +73,22 @@ public class LiftAssociationModelProvider implements Provider<AssociationModel> 
             Long2DoubleMap itemScores = new Long2DoubleOpenHashMap();
 
             // TODO Compute lift association formulas for all other 'Y' items with respect to this 'X'
+            // loop over the 'y' items
+            for (Long2ObjectMap.Entry<LongSortedSet> yEntry: itemUsers.long2ObjectEntrySet()) {
+                long yId = yEntry.getLongKey();
+                LongSortedSet yUsers = yEntry.getValue();
 
+                // TODO Compute P(Y & X) / P(X) and store in itemScores
+                int n = xUsers.size();
+                float intersect = 0;
+                for(long yUser: yUsers){
+                    if(xUsers.contains(yUser))
+                        intersect += 1;
+                }
+                //yUsers.retainAll(xUsers);
+                //itemScores.put(yId, yUsers.size()/n);
+                itemScores.put(yId, intersect * allUsers.size() /(xUsers.size() * yUsers.size()));
+            }
             // save the score map to the main map
             assocMatrix.put(xId, itemScores);
         }

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -67,7 +68,30 @@ public class AssociationItemBasedItemRecommender extends AbstractItemBasedItemRe
         List<Result> results = new ArrayList<>();
 
         // TODO Compute the n highest-scoring items from candidates
-
-        return Results.newResultList(results);
+        for (Long item : candidates) {
+            if (model.hasItem(item)) {
+                double score = model.getItemAssociation(refItem, item);
+                Result res = Results.create(item, score);
+                results.add(res);
+            }
+        }
+        if(n < 0)
+            return Results.newResultList(results);
+        else{
+            Comparator<Result> c = new Comparator<Result>(){
+                @Override
+                public int compare(Result a, Result b){
+                    if(a.getScore() > b.getScore())
+                        return -1;
+                    else if(a.getScore() == b.getScore())
+                        return 0;
+                    else
+                        return 1;
+                }
+            };
+            results.sort(c);
+        }
+        //results.sort(Result res.)
+        return Results.newResultList(results.subList(0, n));
     }
 }
