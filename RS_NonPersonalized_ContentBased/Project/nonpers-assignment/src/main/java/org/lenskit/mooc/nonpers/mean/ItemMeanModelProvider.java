@@ -1,5 +1,6 @@
 package org.lenskit.mooc.nonpers.mean;
 
+import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import org.lenskit.data.dao.DataAccessObject;
@@ -11,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.util.Iterator;
 
 /**
  * Provider class that builds the mean rating item scorer, computing item means from the
@@ -52,17 +54,35 @@ public class ItemMeanModelProvider implements Provider<ItemMeanModel> {
     @Override
     public ItemMeanModel get() {
         // TODO Set up data structures for computing means
+        Long2DoubleOpenHashMap total = new Long2DoubleOpenHashMap();
+        Long2DoubleOpenHashMap count = new Long2DoubleOpenHashMap();
 
         try (ObjectStream<Rating> ratings = dao.query(Rating.class).stream()) {
             for (Rating r: ratings) {
                 // this loop will run once for each rating in the data set
                 // TODO process this rating
+                long id = r.getItemId();
+                if(count.containsKey(id)) {
+                    count.put(id, count.get(id) + 1);
+                    total.put(id, total.get(id) + r.getValue());
+                }
+                else{
+                    count.put(id, 1);
+                    total.put(id, r.getValue());
+                }
             }
         }
 
         Long2DoubleOpenHashMap means = new Long2DoubleOpenHashMap();
         // TODO Finalize means to store them in the mean model
-
+        Iterator it = count.keySet().iterator();
+        while(it.hasNext()){
+            long id = (long)it.next();
+            double num = count.get(id);
+            double total_score = total.get(id);
+            double mean = total_score/num;
+            means.put(id, mean);
+        }
         logger.info("computed mean ratings for {} items", means.size());
         return new ItemMeanModel(means);
     }

@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.util.Iterator;
 
 /**
  * Provider class that builds the mean rating item scorer, computing damped item means from the
@@ -63,6 +64,44 @@ public class DampedItemMeanModelProvider implements Provider<ItemMeanModel> {
     public ItemMeanModel get() {
         // TODO Compute damped means
         // TODO Remove the line below when you have finished
-        throw new UnsupportedOperationException("damped mean not implemented");
+        Long2DoubleOpenHashMap total = new Long2DoubleOpenHashMap();
+        Long2DoubleOpenHashMap count = new Long2DoubleOpenHashMap();
+
+        double total_score = 0;
+        double total_count = 0;
+        double global_mean = 0;
+        try (ObjectStream<Rating> ratings = dao.query(Rating.class).stream()) {
+            for (Rating r: ratings) {
+                // this loop will run once for each rating in the data set
+                // TODO process this rating
+                long id = r.getItemId();
+                if(count.containsKey(id)) {
+                    count.put(id, count.get(id) + 1);
+                    total.put(id, total.get(id) + r.getValue());
+                }
+                else{
+                    count.put(id, 1);
+                    total.put(id, r.getValue());
+                }
+                total_score += r.getValue();
+                total_count += 1;
+            }
+        }
+
+        global_mean = total_score/total_count;
+
+        Long2DoubleOpenHashMap means = new Long2DoubleOpenHashMap();
+        // TODO Finalize means to store them in the mean model
+        Iterator it = count.keySet().iterator();
+        while(it.hasNext()){
+            long id = (long)it.next();
+            double num = count.get(id);
+            total_score = total.get(id) + this.damping * global_mean;
+            double mean = total_score/(num + this.damping);
+            means.put(id, mean);
+        }
+        //throw new UnsupportedOperationException("damped mean not implemented");
+        logger.info("computed damped mean ratings for {} items", means.size());
+        return new ItemMeanModel(means);
     }
 }

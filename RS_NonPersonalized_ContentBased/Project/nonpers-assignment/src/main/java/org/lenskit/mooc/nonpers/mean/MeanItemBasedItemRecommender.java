@@ -15,6 +15,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.Comparator;
 
 /**
  * An item scorer that scores each item with its mean rating.
@@ -86,7 +87,32 @@ public class MeanItemBasedItemRecommender extends AbstractItemBasedItemRecommend
         List<Result> results = new ArrayList<>();
 
         // TODO Find the top N items by mean rating
+        for (Long item : items) {
 
-        return Results.newResultList(results);
+            if (model.hasItem(item)) {
+                double score = model.getMeanRating(item);
+                Result res = Results.create(item, score);
+                results.add(res);
+            }
+
+        }
+        if(n < 0)
+            return Results.newResultList(results);
+        else{
+            Comparator<Result> c = new Comparator<Result>(){
+                @Override
+                public int compare(Result a, Result b){
+                    if(a.getScore() > b.getScore())
+                        return -1;
+                    else if(a.getScore() == b.getScore())
+                        return 0;
+                    else
+                        return 1;
+                }
+            };
+            results.sort(c);
+        }
+        //results.sort(Result res.)
+        return Results.newResultList(results.subList(0, n));
     }
 }

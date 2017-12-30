@@ -6,7 +6,8 @@
 .DS_Store
 # Log file
 *.log
-
+*.idea/
+*.gradle/
 # BlueJ files
 *.ctxt
 
